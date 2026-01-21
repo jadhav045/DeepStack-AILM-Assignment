@@ -1,0 +1,87 @@
+description: "LLM User Validator Eval"
+
+# We point to our python wrapper. Since promptfoo runs from the root usually,
+# or relative to the config, we need to be precise.
+# Best practice: Assume we run the command pointing to this config.
+providers:
+  - id: python:test_wrapper.py:call_validation
+
+prompts: 
+  - "{{user_json}}"
+
+tests:
+  # 1. THE HAPPY PATH
+  - description: "Valid User (Standard)"
+    vars:
+      user_json: '{"name": "Aarav", "email": "aarav@gmail.com", "age": 25, "country": "IN", "phone": "+919876543210"}'
+    assert:
+      - type: javascript
+        value: JSON.parse(output).is_valid === true
+      - type: javascript
+        value: JSON.parse(output).errors.length === 0
+
+  # 2. CRITICAL ERRORS
+  - description: "Critical Error: Invalid Phone Format"
+    vars:
+      user_json: '{"name": "John", "email": "j@test.com", "age": 25, "country": "US", "phone": "9876543210"}'
+    assert:
+      - type: javascript
+        value: JSON.parse(output).is_valid === false
+      - type: icontains
+        value: "E.164"
+
+  - description: "Critical Error: Invalid Country Code"
+    vars:
+      user_json: '{"name": "Bob", "email": "bob@gmail.com", "age": 30, "country": "India", "phone": "+919876543210"}'
+    assert:
+      - type: javascript
+        value: JSON.parse(output).is_valid === false
+      - type: icontains
+        value: "country"
+
+  - description: "Stress Test: Multiple Critical Errors"
+    vars:
+      user_json: '{"name": "", "email": "bob", "age": -5, "country": "India", "phone": "999"}'
+    assert:
+      - type: javascript
+        value: JSON.parse(output).is_valid === false
+      - type: javascript
+        value: JSON.parse(output).errors.length >= 4
+
+  # 3. WARNINGS
+  - description: "Warning: Phone Country Mismatch"
+    vars:
+      user_json: '{"name": "John", "email": "j@test.com", "age": 25, "country": "US", "phone": "+919876543210"}'
+    assert:
+      - type: javascript
+        value: JSON.parse(output).is_valid === true
+      - type: icontains
+        value: "match"
+
+  - description: "Warning: Disposable Email"
+    vars:
+      user_json: '{"name": "Ty", "email": "ty@tempmail.com", "age": 20, "country": "US", "phone": "+15550109999"}'
+    assert:
+      - type: javascript
+        value: JSON.parse(output).is_valid === true
+      - type: icontains
+        value: "disposable"
+
+  # 4. AGE CHECKS
+  - description: "Age Boundary: 20 (Adult)"
+    vars:
+      user_json: '{"name": "John", "email": "j@test.com", "age": 20, "country": "US", "phone": "+15550000000"}'
+    assert:
+      - type: javascript
+        value: JSON.parse(output).is_valid === true
+      - type: not-icontains
+        value: "age"
+
+  - description: "Age Boundary: 16 (Minor)"
+    vars:
+      user_json: '{"name": "John", "email": "j@test.com", "age": 16, "country": "US", "phone": "+15550000000"}'
+    assert:
+      - type: javascript
+        value: JSON.parse(output).is_valid === true
+      - type: icontains
+        value: "age"
