@@ -1,0 +1,8 @@
+# Environments
+venv/
+tests/__pycache__/
+.env
+
+# Testing
+.promptfoo/
+promptfoo-cache/
