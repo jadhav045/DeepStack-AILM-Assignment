@@ -24,8 +24,8 @@ It is designed to be **provider-agnostic**, supporting OpenAI, Groq, and other O
 
 1.  **Clone the repository:**
     ```bash
-    git clone [https://github.com/yourusername/llm-validator.git](https://github.com/yourusername/llm-validator.git)
-    cd llm-validator
+    git clone https://github.com/jadhav045/DeepStack-AILM-Assignment.git
+    cd DeepStack-AILM-Assignment
     ```
 
 2.  **Create and activate a virtual environment:**
